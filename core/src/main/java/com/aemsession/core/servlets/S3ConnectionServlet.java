@@ -32,10 +32,12 @@ public class S3ConnectionServlet extends SlingSafeMethodsServlet {
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
         String objectKey = request.getParameter("objectKey");
         AmazonS3 s3Connection = s3ConnectionService.getS3Connection();
-        InputStream s3ObjectJsonStream = getObjectStreamFromS3Bucket(s3Connection, objectKey);
-        String objectDataString = IOUtils.toString(s3ObjectJsonStream, StandardCharsets.UTF_8);
-        response.setContentType("text/html");
-        response.getWriter().write(objectDataString);
+        if(null != s3Connection) {
+            InputStream s3ObjectJsonStream = getObjectStreamFromS3Bucket(s3Connection, objectKey);
+            String objectDataString = IOUtils.toString(s3ObjectJsonStream, StandardCharsets.UTF_8);
+            response.setContentType("text/html");
+            response.getWriter().write(objectDataString);
+        }
     }
 
     private InputStream getObjectStreamFromS3Bucket(AmazonS3 s3Connection, String objectKey) {
