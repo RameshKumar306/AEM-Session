@@ -1,0 +1,8 @@
+<sly data-sly-use.slingModel="com.aemsession.core.models.SlingModel">
+    <p>${slingModel.slingModelText}</p>
+
+    <div data-sly-list.annotations="${slingModel.slingAnnotations}">
+        <p>${annotationsList.count} Annotation = ${annotations}</p>
+    </div>
+
+</sly>
