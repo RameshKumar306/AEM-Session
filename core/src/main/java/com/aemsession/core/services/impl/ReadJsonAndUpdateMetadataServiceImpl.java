@@ -1,10 +1,7 @@
 package com.aemsession.core.services.impl;
 
 import com.aemsession.core.services.ReadJsonAndUpdateMetadataService;
-import com.aemsession.core.services.S3ConnectionService;
 import com.aemsession.core.utils.ResolverUtil;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
 import com.day.cq.search.PredicateGroup;
 import com.day.cq.search.Query;
 import com.day.cq.search.QueryBuilder;
@@ -41,17 +38,13 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
     @Reference
     private QueryBuilder queryBuilder;
 
-    @Reference
-    private S3ConnectionService s3ConnectionService;
-
     @Override
-    public List<String> readJsonAndUpdateMetadata() {
+    public List<String> readJsonAndUpdateMetadata(InputStream jsonStream) {
         ResourceResolver resourceResolver = null;
         Session session = null;
         try {
             resourceResolver = ResolverUtil.newResolver(resourceResolverFactory);
             session = resourceResolver.adaptTo(Session.class);
-            InputStream jsonStream = getJsonStreamFromS3Bucket("PIM Jsons/PIM JSON structure.json");
             String jsonDataString = IOUtils.toString(jsonStream, StandardCharsets.UTF_8);
             JSONArray jsonArray = new JSONArray(jsonDataString);
 
@@ -138,12 +131,5 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
             return assetNode.getName();
         }
         return StringUtils.EMPTY;
-    }
-
-    private InputStream getJsonStreamFromS3Bucket(String objectKey) {
-        AmazonS3 s3Connection = s3ConnectionService.getS3Connection();
-        S3Object s3Object = s3Connection.getObject(s3ConnectionService.getS3BucketName(), objectKey);
-        InputStream s3ObjectJsonStream = s3Object.getObjectContent().getDelegateStream();
-        return s3ObjectJsonStream;
     }
 }

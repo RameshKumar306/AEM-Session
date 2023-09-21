@@ -57,7 +57,7 @@ public class MetadataSyncSchedulerService implements Runnable {
 
     @Override
     public void run() {
-        List<String> updatedMetadata = readJsonAndUpdateMetadataService.readJsonAndUpdateMetadata();
-        LOG.info("Updated Metadata From Scheduler : {}", updatedMetadata);
+//        List<String> updatedMetadata = readJsonAndUpdateMetadataService.readJsonAndUpdateMetadata();
+//        LOG.info("Updated Metadata From Scheduler : {}", updatedMetadata);
     }
 }

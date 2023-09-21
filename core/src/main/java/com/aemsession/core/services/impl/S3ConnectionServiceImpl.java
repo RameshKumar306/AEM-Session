@@ -4,8 +4,7 @@ import com.aemsession.core.configs.S3ConnectionConfig;
 import com.aemsession.core.services.S3ConnectionService;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -65,7 +64,7 @@ public class S3ConnectionServiceImpl implements S3ConnectionService {
                     sessionCredentials.getSessionToken());
             return AmazonS3ClientBuilder.standard()
                     .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                    .withRegion(clientRegion)
+                    .withRegion(s3ConnectionConfig.awsRegion())
                     .build();
         }
         catch(AmazonServiceException e) {
