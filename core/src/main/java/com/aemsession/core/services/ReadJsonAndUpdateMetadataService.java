@@ -5,6 +5,6 @@ import java.util.List;
 
 public interface ReadJsonAndUpdateMetadataService {
 
-    public List<String> readJsonAndUpdateMetadata(InputStream inputStream);
+    public List<String> readJsonAndUpdateMetadata(InputStream inputStream, List<String> updatedMetadataList);
 
 }

@@ -1,5 +1,6 @@
 package com.aemsession.core.services.impl;
 
+import com.aemsession.core.constants.SignetConstants;
 import com.aemsession.core.services.ReadJsonAndUpdateMetadataService;
 import com.aemsession.core.utils.ResolverUtil;
 import com.day.cq.search.PredicateGroup;
@@ -39,29 +40,30 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
     private QueryBuilder queryBuilder;
 
     @Override
-    public List<String> readJsonAndUpdateMetadata(InputStream jsonStream) {
+    public List<String> readJsonAndUpdateMetadata(InputStream jsonStream, List<String> updatedAssetsList) {
         ResourceResolver resourceResolver = null;
         Session session = null;
+        List<String> failures = new ArrayList<>();
         try {
             resourceResolver = ResolverUtil.newResolver(resourceResolverFactory);
             session = resourceResolver.adaptTo(Session.class);
             String jsonDataString = IOUtils.toString(jsonStream, StandardCharsets.UTF_8);
             JSONArray jsonArray = new JSONArray(jsonDataString);
 
-            List<String> updatedAssets = new ArrayList<>();
-            for (int i = 0;i < jsonArray.length();i++) {
-                JSONObject signetObject = jsonArray.getJSONObject(i).getJSONObject("_signet");
-                String productId = signetObject.getJSONObject("signetPIM").get("productId").toString();
-                String skuValue = signetObject.getJSONObject("signetProduct").get("sku").toString();
+            for (int iteration = 0; iteration < jsonArray.length(); iteration++) {
+                JSONObject signetObject = jsonArray.getJSONObject(iteration).getJSONObject(SignetConstants.SIGNET_OBJECT);
+                String productId = signetObject.getJSONObject(SignetConstants.SIGNET_PIM_OBJECT).get(SignetConstants.PRODUCTID_KEY).toString();
+                String skuValue = signetObject.getJSONObject(SignetConstants.SIGNET_PRODUCT_OBJECT).get(SignetConstants.SKU_KEY).toString();
                 Node assetNode = getAemAssetNodeBasedOnProductIdAndSku(productId, skuValue, session);
                 if (null != assetNode) {
-                    Map<String, String> pimMetadataMap = getPimMetadata(jsonArray, signetObject, i);
+                    Map<String, String> pimMetadataMap = getPimMetadata(jsonArray, signetObject, iteration);
                     String updatedAssetName = updateAssetMetadata(assetNode, pimMetadataMap);
-                    updatedAssets.add(updatedAssetName);
+                    updatedAssetsList.add(updatedAssetName);
+                } else {
+                    failures.add(productId);
                 }
+                session.save();
             }
-            session.save();
-            return updatedAssets;
         } catch (JSONException | RepositoryException | LoginException | IOException e) {
             LOG.error("Exception while reading json :( | {}", e);
         } finally {
@@ -72,21 +74,21 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
                 session.logout();
             }
         }
-        return null;
+        return failures;
     }
 
     private Node getAemAssetNodeBasedOnProductIdAndSku(String productId, String sku, Session session) throws RepositoryException {
         Map<String, Object> queryMap = new HashMap<>();
-        queryMap.put("path", "/content/dam/aemsession/test");
-        queryMap.put("type", "dam:Asset");
-        queryMap.put("1_property", "@jcr:content/metadata/productId");
-        queryMap.put("1_property.value", productId);
-        queryMap.put("1_property.operation", "equals");
-        queryMap.put("2_property", "@jcr:content/metadata/sku");
-        queryMap.put("2_property.value", sku);
-        queryMap.put("2_property.operation", "equals");
-        queryMap.put("property.and", true);
-        queryMap.put("p.limit", "-1");
+        queryMap.put(SignetConstants.PATH, SignetConstants.DAM_PRODUCTID_SEARCH_PATH);
+        queryMap.put(SignetConstants.TYPE, SignetConstants.DAM_ASSET);
+        queryMap.put(SignetConstants.ONE_PROPERTY, SignetConstants.SEARCH_PROPERTY_PRODUCTID);
+        queryMap.put(SignetConstants.ONE_PROPERTY_DOT_VALUE, productId);
+        queryMap.put(SignetConstants.ONE_PROPERTY_DOT_OPERATION, SignetConstants.SEARCH_OPERATION_EQUALS);
+        queryMap.put(SignetConstants.TWO_PROPERTY, SignetConstants.SEARCH_PROPERTY_SKU);
+        queryMap.put(SignetConstants.TWO_PROPERTY_DOT_VALUE, sku);
+        queryMap.put(SignetConstants.TWO_PROPERTY_DOT_OPERATION, SignetConstants.SEARCH_OPERATION_EQUALS);
+        queryMap.put(SignetConstants.PROPERTY_DOT_AND, true);
+        queryMap.put(SignetConstants.P_DOT_LIMIT, "-1");
         Query query = queryBuilder.createQuery(PredicateGroup.create(queryMap), session);
         SearchResult result = query.getResult();
         Node assetNode = null;
@@ -111,11 +113,11 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
                     }
                 }
             }
-            JSONObject extSourceSystemAudit = jsonArray.getJSONObject(index).getJSONObject("extSourceSystemAudit");
-            String sourceKey = extSourceSystemAudit.getJSONObject("externalKey").get("sourceKey").toString();
-            String lastUpdatedDate = extSourceSystemAudit.get("lastUpdatedDate").toString();
-            pimMetadata.put("sourceKey", sourceKey);
-            pimMetadata.put("lastUpdatedDate", lastUpdatedDate);
+            JSONObject extSourceSystemAudit = jsonArray.getJSONObject(index).getJSONObject(SignetConstants.EXT_SOURCE_SYSTEM_AUDIT_OBJECT);
+            String sourceKey = extSourceSystemAudit.getJSONObject(SignetConstants.EXTERNAL_KEY_OBJECT).get(SignetConstants.SOURCE_KEY_OBJECT_KEY).toString();
+            String lastUpdatedDate = extSourceSystemAudit.get(SignetConstants.LAST_UPDATED_DATE).toString();
+            pimMetadata.put(SignetConstants.SOURCE_KEY_OBJECT_KEY, sourceKey);
+            pimMetadata.put(SignetConstants.LAST_UPDATED_DATE, lastUpdatedDate);
         } catch (JSONException e) {
             LOG.error("JSONException while reading json :( | {}", e);
         }
@@ -124,7 +126,7 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
 
     private String updateAssetMetadata(Node assetNode, Map<String, String> pimMetadataMap) throws RepositoryException {
         if (null != assetNode) {
-            Node assetMetadataNode = assetNode.getNode("jcr:content/metadata");
+            Node assetMetadataNode = assetNode.getNode(SignetConstants.NN_ASSET_METADATA);
             for (Map.Entry<String, String> metadataEntry : pimMetadataMap.entrySet()) {
                 assetMetadataNode.setProperty(metadataEntry.getKey(), metadataEntry.getValue());
             }
