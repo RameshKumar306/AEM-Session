@@ -1,11 +1,13 @@
 package com.aemsession.core.services.impl;
 
 import com.aemsession.core.constants.SignetConstants;
+import com.aemsession.core.services.MetadataSchemaFieldMappingService;
 import com.aemsession.core.services.ReadJsonAndUpdateMetadataService;
 import com.aemsession.core.utils.ResolverUtil;
 import com.day.cq.search.PredicateGroup;
 import com.day.cq.search.Query;
 import com.day.cq.search.QueryBuilder;
+import com.day.cq.search.result.Hit;
 import com.day.cq.search.result.SearchResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +41,9 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
     @Reference
     private QueryBuilder queryBuilder;
 
+    @Reference
+    private MetadataSchemaFieldMappingService metadataSchemaFieldMappingService;
+
     @Override
     public List<String> readJsonAndUpdateMetadata(InputStream jsonStream, List<String> updatedAssetsList) {
         ResourceResolver resourceResolver = null;
@@ -53,16 +58,19 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
             for (int iteration = 0; iteration < jsonArray.length(); iteration++) {
                 JSONObject signetObject = jsonArray.getJSONObject(iteration).getJSONObject(SignetConstants.SIGNET_OBJECT);
                 String productId = signetObject.getJSONObject(SignetConstants.SIGNET_PIM_OBJECT).get(SignetConstants.PRODUCTID_KEY).toString();
-                String skuValue = signetObject.getJSONObject(SignetConstants.SIGNET_PRODUCT_OBJECT).get(SignetConstants.SKU_KEY).toString();
-                Node assetNode = getAemAssetNodeBasedOnProductIdAndSku(productId, skuValue, session);
-                if (null != assetNode) {
+                List<Node> assetNodes = getAemAssetNodesBasedOnProductId(productId, session);
+                if (assetNodes.size() >= 1) {
                     Map<String, String> pimMetadataMap = getPimMetadata(jsonArray, signetObject, iteration);
-                    String updatedAssetName = updateAssetMetadata(assetNode, pimMetadataMap);
-                    updatedAssetsList.add(updatedAssetName);
+                    Map<String, String> jsonAndMetaDataSchemaMap = metadataSchemaFieldMappingService.getJsonAndMetaDataSchemaMap();
+                    for (Node assetNode : assetNodes) {
+                        String updatedAssetName = updateAssetMetadata(assetNode, pimMetadataMap, jsonAndMetaDataSchemaMap, session);
+                        if (!updatedAssetsList.contains(updatedAssetName)) {
+                            updatedAssetsList.add(updatedAssetName);
+                        }
+                    }
                 } else {
                     failures.add(productId);
                 }
-                session.save();
             }
         } catch (JSONException | RepositoryException | LoginException | IOException e) {
             LOG.error("Exception while reading json :( | {}", e);
@@ -77,25 +85,22 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
         return failures;
     }
 
-    private Node getAemAssetNodeBasedOnProductIdAndSku(String productId, String sku, Session session) throws RepositoryException {
+    private List<Node> getAemAssetNodesBasedOnProductId(String productId, Session session) throws RepositoryException {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put(SignetConstants.PATH, SignetConstants.DAM_PRODUCTID_SEARCH_PATH);
         queryMap.put(SignetConstants.TYPE, SignetConstants.DAM_ASSET);
         queryMap.put(SignetConstants.ONE_PROPERTY, SignetConstants.SEARCH_PROPERTY_PRODUCTID);
         queryMap.put(SignetConstants.ONE_PROPERTY_DOT_VALUE, productId);
         queryMap.put(SignetConstants.ONE_PROPERTY_DOT_OPERATION, SignetConstants.SEARCH_OPERATION_EQUALS);
-        queryMap.put(SignetConstants.TWO_PROPERTY, SignetConstants.SEARCH_PROPERTY_SKU);
-        queryMap.put(SignetConstants.TWO_PROPERTY_DOT_VALUE, sku);
-        queryMap.put(SignetConstants.TWO_PROPERTY_DOT_OPERATION, SignetConstants.SEARCH_OPERATION_EQUALS);
-        queryMap.put(SignetConstants.PROPERTY_DOT_AND, true);
         queryMap.put(SignetConstants.P_DOT_LIMIT, "-1");
         Query query = queryBuilder.createQuery(PredicateGroup.create(queryMap), session);
         SearchResult result = query.getResult();
-        Node assetNode = null;
-        if (result.getHits().size() == 1) {
-            assetNode = result.getHits().get(0).getResource().adaptTo(Node.class);
+        List<Node> assetNodes = new ArrayList<>();
+        for (Hit hit : result.getHits()) {
+            Node assetNode = hit.getResource().adaptTo(Node.class);
+            assetNodes.add(assetNode);
         }
-        return assetNode;
+        return assetNodes;
     }
 
     private Map<String, String> getPimMetadata(JSONArray jsonArray, JSONObject signetObject, int index) {
@@ -124,11 +129,16 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
         return pimMetadata;
     }
 
-    private String updateAssetMetadata(Node assetNode, Map<String, String> pimMetadataMap) throws RepositoryException {
+    private String updateAssetMetadata(Node assetNode, Map<String, String> pimMetadataMap, Map<String, String> jsonAndSchemaFieldMap, Session session) throws RepositoryException {
         if (null != assetNode) {
             Node assetMetadataNode = assetNode.getNode(SignetConstants.NN_ASSET_METADATA);
-            for (Map.Entry<String, String> metadataEntry : pimMetadataMap.entrySet()) {
-                assetMetadataNode.setProperty(metadataEntry.getKey(), metadataEntry.getValue());
+            for (Map.Entry<String, String> metadataJsonMapEntry : jsonAndSchemaFieldMap.entrySet()) {
+                if (pimMetadataMap.containsKey(metadataJsonMapEntry.getKey())
+                        && null != pimMetadataMap.get(metadataJsonMapEntry.getKey())
+                        && !"null".equals(pimMetadataMap.get(metadataJsonMapEntry.getKey()))) {
+                    assetMetadataNode.setProperty(metadataJsonMapEntry.getValue(), pimMetadataMap.get(metadataJsonMapEntry.getKey()));
+                    session.save();
+                }
             }
             return assetNode.getName();
         }

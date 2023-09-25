@@ -93,7 +93,16 @@ public class PIMJsonFileListener implements ResourceChangeListener {
 
     private void moveJsonFileToArchive(Session session, String jsonPath, String targetPath, String jsonFileName) {
         try {
-            session.move(jsonPath, targetPath + "/" + jsonFileName);
+            int fileIterator = 1;
+            if (!session.itemExists(targetPath + "/" + jsonFileName)) {
+                session.move(jsonPath, targetPath + "/" + jsonFileName);
+            } else {
+                while (session.itemExists(targetPath + "/" + jsonFileName)) {
+                    jsonFileName = jsonFileName + "-" + fileIterator;
+                    fileIterator++;
+                }
+                session.move(jsonPath, targetPath + "/" + jsonFileName);
+            }
             session.save();
         } catch (RepositoryException e) {
             LOG.error("Error while moving json file to archive : {}", e);
