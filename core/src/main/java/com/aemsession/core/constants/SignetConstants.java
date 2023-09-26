@@ -1,5 +1,8 @@
 package com.aemsession.core.constants;
 
+/*
+* Signet Constant File to maintain constants
+*/
 public class SignetConstants {
 
     public static final String TO_MAIL = "ramesh.kumar@grazitti.com";
@@ -14,7 +17,6 @@ public class SignetConstants {
     public static final String SIGNET_OBJECT = "_signet";
     public static final String SIGNET_PIM_OBJECT = "signetPIM";
     public static final String PRODUCTID_KEY = "productId";
-    public static final String SKU_KEY = "sku";
     public static final String EXT_SOURCE_SYSTEM_AUDIT_OBJECT = "extSourceSystemAudit";
     public static final String EXTERNAL_KEY_OBJECT = "externalKey";
     public static final String SOURCE_KEY_OBJECT_KEY = "sourceKey";
@@ -29,6 +31,5 @@ public class SignetConstants {
     public static final String ONE_PROPERTY_DOT_VALUE = "1_property.value";
     public static final String ONE_PROPERTY_DOT_OPERATION = "1_property.operation";
     public static final String P_DOT_LIMIT = "p.limit";
-
 
 }

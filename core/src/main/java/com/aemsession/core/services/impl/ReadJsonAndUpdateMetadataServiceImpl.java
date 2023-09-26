@@ -30,6 +30,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * This service is used to read json file and update metadata.
+ * */
 @Component(service = ReadJsonAndUpdateMetadataService.class, immediate = true)
 public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMetadataService {
 
@@ -44,6 +47,12 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
     @Reference
     private MetadataSchemaFieldMappingService metadataSchemaFieldMappingService;
 
+    /**
+     * This method is used to read json and update metadata.
+     * @param jsonStream
+     * @param updatedAssetsList
+     * @return List<String>
+     * */
     @Override
     public List<String> readJsonAndUpdateMetadata(InputStream jsonStream, List<String> updatedAssetsList) {
         ResourceResolver resourceResolver = null;
@@ -85,6 +94,13 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
         return failures;
     }
 
+    /**
+     * This method fetched the nodes based on product ids of json file.
+     * @param productId
+     * @param session
+     * @return List<Node>
+     * @throws RepositoryException
+     * */
     private List<Node> getAemAssetNodesBasedOnProductId(String productId, Session session) throws RepositoryException {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put(SignetConstants.PATH, SignetConstants.DAM_PRODUCTID_SEARCH_PATH);
@@ -103,6 +119,13 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
         return assetNodes;
     }
 
+    /**
+     * This method will give metadata map to be updated for the assets.
+     * @param jsonArray
+     * @param signetObject
+     * @param index
+     * @return Map<String, String>
+     * */
     private Map<String, String> getPimMetadata(JSONArray jsonArray, JSONObject signetObject, int index) {
         Map<String, String> pimMetadata = new HashMap<>();
         try {
@@ -129,6 +152,15 @@ public class ReadJsonAndUpdateMetadataServiceImpl implements ReadJsonAndUpdateMe
         return pimMetadata;
     }
 
+    /**
+     * This method will update the asset's metadata.
+     * @param session
+     * @param assetNode
+     * @param jsonAndSchemaFieldMap
+     * @param pimMetadataMap
+     * @return String
+     * @throws RepositoryException
+     * */
     private String updateAssetMetadata(Node assetNode, Map<String, String> pimMetadataMap, Map<String, String> jsonAndSchemaFieldMap, Session session) throws RepositoryException {
         if (null != assetNode) {
             Node assetMetadataNode = assetNode.getNode(SignetConstants.NN_ASSET_METADATA);

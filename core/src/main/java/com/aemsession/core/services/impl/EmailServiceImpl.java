@@ -19,11 +19,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * This service is a helper service for Email
+ * */
 @Component(service = EmailService.class, immediate = true)
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmailServiceImpl.class);
 
+    /**
+     * This method is used send email
+     * @param messageGatewayService
+     * @param mailTemplate
+     * @param lookupMap
+     * @param fromAddress
+     * @param toAddress
+     * @param subject
+     * @return true if mail sent successfully.
+     * */
     @Override
     public boolean sendEmail(MessageGatewayService messageGatewayService, MailTemplate mailTemplate, StrLookup lookupMap, String fromAddress, String toAddress, String subject) {
         boolean isEmailSent = false;
@@ -47,6 +60,11 @@ public class EmailServiceImpl implements EmailService {
         return isEmailSent;
     }
 
+    /**
+     * This method will return list of Internet addresses of String Address
+     * @param addressString
+     * @return List<InternetAddress>
+     * */
     private List<InternetAddress> initializeListOfInternetAddress(final String addressString)
             throws AddressException {
 

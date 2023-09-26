@@ -20,7 +20,7 @@ public final class ResolverUtil {
     public static final String S3_SERVICE_USER = "s3ServiceUser";
     /**
      * @param  resourceResolverFactory factory
-     * @return new resource resolver for Sony service user
+     * @return new resource resolver for service user
      * @throws LoginException if problems
      */
     public static ResourceResolver newResolver( ResourceResolverFactory resourceResolverFactory ) throws LoginException {

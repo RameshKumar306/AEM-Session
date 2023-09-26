@@ -4,6 +4,9 @@ import com.day.cq.commons.mail.MailTemplate;
 import com.day.cq.mailer.MessageGatewayService;
 import org.apache.commons.lang.text.StrLookup;
 
+/**
+ * Interface for Email service.
+ * */
 public interface EmailService {
 
     public boolean sendEmail(final MessageGatewayService messageGatewayService,

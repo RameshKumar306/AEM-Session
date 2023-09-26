@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/*
+* ResourceChangeListener to listen upload of JSON Files in DAM
+*/
 @Component(service = ResourceChangeListener.class,
         immediate = true,
         property = {
@@ -55,6 +58,10 @@ public class PIMJsonFileListener implements ResourceChangeListener {
 
     private Session session;
 
+
+    /**
+    * @param resourceChangeList
+    * */
     @Override
     public void onChange(List<ResourceChange> resourceChangeList) {
         for (ResourceChange resourceChange : resourceChangeList) {
@@ -91,6 +98,13 @@ public class PIMJsonFileListener implements ResourceChangeListener {
         }
     }
 
+    /**
+    * This method will move the JSON file to archive after mapping all metadata.
+    * @param session
+    * @param jsonPath
+    * @param targetPath
+    * @param jsonFileName
+    */
     private void moveJsonFileToArchive(Session session, String jsonPath, String targetPath, String jsonFileName) {
         try {
             int fileIterator = 1;
@@ -109,12 +123,17 @@ public class PIMJsonFileListener implements ResourceChangeListener {
         }
     }
 
+    /**
+     * This method is used to send email with updated metadata data.
+     * @param updatedMetadata
+     * @return true if mail sent successfully.
+     */
     private boolean sendEmailWithUpdatedMetadataAssets(List<String> updatedMetadata) {
         final MailTemplate mailTemplate = MailTemplate.create(SignetConstants.EMAIL_TEMPLATE, session);
         LOG.info("Sending Email to {}", SignetConstants.TO_MAIL);
         LOG.info("Template: {}", mailTemplate);
         final Map<String, String> contentMap = new HashMap<String, String>();
-        contentMap.put("recieverName", "Ramesh Kumar");
+        contentMap.put("receiverName", "Ramesh Kumar");
         contentMap.put("signetTeam", "Signet Team");
         contentMap.put("updatedMetadata", updatedMetadata.toString());
         contentMap.put("timeStamp", DateTime.now().toString());

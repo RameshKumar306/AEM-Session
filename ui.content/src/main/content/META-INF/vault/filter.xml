@@ -8,4 +8,5 @@
     </filter>
     <filter root="/content/dam/aemsession/asset.jpg" mode="merge"/>
     <filter root="/content/experience-fragments/aemsession" mode="merge"/>
+    <filter root="/conf/global/settings/dam/adminui-extension/metadataschema/Signet - Omni Schema Feb2023" mode="replace"/>
 </workspaceFilter>

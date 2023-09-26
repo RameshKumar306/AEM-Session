@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/**
+ * This is impl service file of MetadataSchemaFieldMappingService config.
+ * */
 @Component(service = MetadataSchemaFieldMappingService.class, immediate = true)
 @Designate(ocd = MetadataSchemaFieldMappingConfig.class)
 public class MetadataSchemaFieldMappingServiceImpl implements MetadataSchemaFieldMappingService {
@@ -25,10 +27,19 @@ public class MetadataSchemaFieldMappingServiceImpl implements MetadataSchemaFiel
         metadataSchemaFieldConfig = config;
     }
 
+    /**
+     * This method will give values of entered values in OSGi Config
+     * @return String[]
+     * */
     @Override
     public String[] fieldValues() {
         return metadataSchemaFieldConfig.fieldValues();
     }
+
+    /**
+     * This method will give mapping of json object and metadata schema field.
+     * @return Map<String, String>
+     * */
 
     @Override
     public Map<String, String> getJsonAndMetaDataSchemaMap() {
